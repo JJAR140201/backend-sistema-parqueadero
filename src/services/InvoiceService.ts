@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 import { Invoice } from '../entities/Invoice';
 import { ParkingSession } from '../entities/ParkingSession';
 import { Client } from '../entities/Client';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
 
