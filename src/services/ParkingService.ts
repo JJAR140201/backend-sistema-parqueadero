@@ -10,7 +10,7 @@ export class ParkingService {
     private clientRepository: Repository<Client>
   ) {}
 
-  async registerEntry(plate: string, clientId?: string) {
+  async registerEntry(plate: string, userId: string, clientId?: string) {
     // Buscar o crear vehículo
     let vehicle = await this.vehicleRepository.findOne({ where: { plate } });
     
@@ -27,6 +27,7 @@ export class ParkingService {
     const parkingSession = this.parkingRepository.create({
       vehicleId: vehicle.id,
       clientId: clientId,
+      userId: userId, // Asociar al usuario autenticado
       entryTime: new Date(),
       status: 'active',
     });
@@ -35,9 +36,9 @@ export class ParkingService {
     return parkingSession;
   }
 
-  async registerExit(sessionId: string, clientId?: string) {
+  async registerExit(sessionId: string, userId: string, clientId?: string) {
     const session = await this.parkingRepository.findOne({
-      where: { id: sessionId },
+      where: { id: sessionId, userId: userId }, // Validar que pertenece al usuario
       relations: ['client'],
     });
 
@@ -57,7 +58,7 @@ export class ParkingService {
     return session;
   }
 
-  async registerExitByPlate(plate: string) {
+  async registerExitByPlate(plate: string, userId: string) {
     const vehicle = await this.vehicleRepository.findOne({ where: { plate } });
 
     if (!vehicle) {
@@ -65,7 +66,7 @@ export class ParkingService {
     }
 
     const session = await this.parkingRepository.findOne({
-      where: { vehicleId: vehicle.id, status: 'active' },
+      where: { vehicleId: vehicle.id, status: 'active', userId: userId }, // Filtrar por usuario
       relations: ['client'],
     });
 
@@ -73,7 +74,7 @@ export class ParkingService {
       throw new Error('No active parking session found for this vehicle');
     }
 
-    return this.registerExit(session.id, session.clientId);
+    return this.registerExit(session.id, userId, session.clientId);
   }
 
   private calculateCost(entryTime: Date, exitTime: Date, client?: Client): { duration: number; cost: number } {
@@ -93,14 +94,14 @@ export class ParkingService {
     return { duration: durationHours, cost };
   }
 
-  async getActiveSessions() {
+  async getActiveSessions(userId: string) {
     return this.parkingRepository.find({
-      where: { status: 'active' },
+      where: { status: 'active', userId: userId }, // Filtrar por usuario
       relations: ['vehicle', 'client'],
     });
   }
 
-  async getSessionsByPlate(plate: string) {
+  async getSessionsByPlate(plate: string, userId: string) {
     const vehicle = await this.vehicleRepository.findOne({ where: { plate } });
     
     if (!vehicle) {
@@ -108,8 +109,16 @@ export class ParkingService {
     }
 
     return this.parkingRepository.find({
-      where: { vehicleId: vehicle.id },
+      where: { vehicleId: vehicle.id, userId: userId }, // Filtrar por usuario
       relations: ['client'],
+    });
+  }
+
+  async getAllSessions(userId: string) {
+    return this.parkingRepository.find({
+      where: { userId: userId }, // Filtrar por usuario
+      relations: ['vehicle', 'client'],
+      order: { createdAt: 'DESC' },
     });
   }
 }

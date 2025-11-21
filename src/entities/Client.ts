@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne } from 'typeorm';
 import { ParkingSession } from './ParkingSession';
 import { Invoice } from './Invoice';
+import { User } from './User';
 
 @Entity('clients')
 export class Client {
@@ -33,6 +34,12 @@ export class Client {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, (user) => user.clients)
+  user: User;
 
   @OneToMany(() => ParkingSession, session => session.client)
   parkingSessions: ParkingSession[];

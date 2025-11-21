@@ -13,7 +13,7 @@ export class ReportService {
     private parkingSessionRepository: Repository<ParkingSession>
   ) {}
 
-  async generateDailyReport(date: Date) {
+  async generateDailyReport(date: Date, userId: string) {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -22,7 +22,8 @@ export class ReportService {
 
     const sessions = await this.parkingSessionRepository
       .createQueryBuilder('session')
-      .where('session.entryTime >= :start', { start: startOfDay })
+      .where('session.userId = :userId', { userId }) // Filtrar por usuario
+      .andWhere('session.entryTime >= :start', { start: startOfDay })
       .andWhere('session.entryTime <= :end', { end: endOfDay })
       .getMany();
 
@@ -41,13 +42,14 @@ export class ReportService {
     return this.dailyReportRepository.save(report);
   }
 
-  async generateMonthlyReport(month: number, year: number) {
+  async generateMonthlyReport(month: number, year: number, userId: string) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
     const sessions = await this.parkingSessionRepository
       .createQueryBuilder('session')
-      .where('session.entryTime >= :start', { start: startDate })
+      .where('session.userId = :userId', { userId }) // Filtrar por usuario
+      .andWhere('session.entryTime >= :start', { start: startDate })
       .andWhere('session.entryTime <= :end', { end: endDate })
       .getMany();
 
@@ -68,8 +70,8 @@ export class ReportService {
     return this.monthlyReportRepository.save(report);
   }
 
-  async exportDailyReportToXlsx(date: Date): Promise<string> {
-    const report = await this.generateDailyReport(date);
+  async exportDailyReportToXlsx(date: Date, userId: string): Promise<string> {
+    const report = await this.generateDailyReport(date, userId);
 
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -79,7 +81,8 @@ export class ReportService {
 
     const sessions = await this.parkingSessionRepository
       .createQueryBuilder('session')
-      .where('session.entryTime >= :start', { start: startOfDay })
+      .where('session.userId = :userId', { userId }) // Filtrar por usuario
+      .andWhere('session.entryTime >= :start', { start: startOfDay })
       .andWhere('session.entryTime <= :end', { end: endOfDay })
       .leftJoinAndSelect('session.vehicle', 'vehicle')
       .leftJoinAndSelect('session.client', 'client')
@@ -116,15 +119,16 @@ export class ReportService {
     return filePath;
   }
 
-  async exportMonthlyReportToXlsx(month: number, year: number): Promise<string> {
-    const report = await this.generateMonthlyReport(month, year);
+  async exportMonthlyReportToXlsx(month: number, year: number, userId: string): Promise<string> {
+    const report = await this.generateMonthlyReport(month, year, userId);
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
     const sessions = await this.parkingSessionRepository
       .createQueryBuilder('session')
-      .where('session.entryTime >= :start', { start: startDate })
+      .where('session.userId = :userId', { userId }) // Filtrar por usuario
+      .andWhere('session.entryTime >= :start', { start: startDate })
       .andWhere('session.entryTime <= :end', { end: endDate })
       .leftJoinAndSelect('session.vehicle', 'vehicle')
       .leftJoinAndSelect('session.client', 'client')
@@ -162,7 +166,7 @@ export class ReportService {
     return filePath;
   }
 
-  async getDailyReports(startDate: Date, endDate: Date) {
+  async getDailyReports(startDate: Date, endDate: Date, userId: string) {
     return this.dailyReportRepository
       .createQueryBuilder('report')
       .where('report.reportDate >= :start', { start: startDate })
@@ -171,7 +175,7 @@ export class ReportService {
       .getMany();
   }
 
-  async getMonthlyReports(year: number) {
+  async getMonthlyReports(year: number, userId: string) {
     return this.monthlyReportRepository
       .createQueryBuilder('report')
       .where('report.year = :year', { year })

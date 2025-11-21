@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { Client } from './Client';
 import { ParkingSession } from './ParkingSession';
+import { User } from './User';
 
 @Entity('invoices')
 export class Invoice {
@@ -40,11 +41,18 @@ export class Invoice {
   @Column({ type: 'text', nullable: true })
   notes: string;
 
+  @Column()
+  userId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => User, user => user.invoices)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 
   @ManyToOne(() => Client, client => client.invoices, { nullable: true })
   @JoinColumn({ name: 'clientId' })

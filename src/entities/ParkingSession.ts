@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Vehicle } from './Vehicle';
 import { Client } from './Client';
 import { Invoice } from './Invoice';
+import { User } from './User';
 
 @Entity('parking_sessions')
 export class ParkingSession {
@@ -29,6 +30,9 @@ export class ParkingSession {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   durationHours: number;
 
+  @Column()
+  userId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -38,6 +42,10 @@ export class ParkingSession {
   @ManyToOne(() => Vehicle, vehicle => vehicle.parkingSessions)
   @JoinColumn({ name: 'vehicleId' })
   vehicle: Vehicle;
+
+  @ManyToOne(() => User, user => user.parkingSessions)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 
   @ManyToOne(() => Client, client => client.parkingSessions, { nullable: true })
   @JoinColumn({ name: 'clientId' })

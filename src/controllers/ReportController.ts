@@ -1,27 +1,36 @@
 import { Request, Response } from 'express';
 import { ReportService } from '../services/ReportService';
+import { AuthRequest } from '../middlewares/authMiddleware';
 import * as fs from 'fs';
 
 export class ReportController {
   constructor(private reportService: ReportService) {}
 
-  async generateDailyReport(req: Request, res: Response) {
+  async generateDailyReport(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { date } = req.query;
 
       if (!date) {
         return res.status(400).json({ error: 'date is required' });
       }
 
-      const report = await this.reportService.generateDailyReport(new Date(date as string));
+      const report = await this.reportService.generateDailyReport(new Date(date as string), req.userId);
       res.json(report);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
-  async generateMonthlyReport(req: Request, res: Response) {
+  async generateMonthlyReport(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { month, year } = req.query;
 
       if (!month || !year) {
@@ -30,7 +39,8 @@ export class ReportController {
 
       const report = await this.reportService.generateMonthlyReport(
         parseInt(month as string),
-        parseInt(year as string)
+        parseInt(year as string),
+        req.userId
       );
       res.json(report);
     } catch (error) {
@@ -38,15 +48,19 @@ export class ReportController {
     }
   }
 
-  async exportDailyReportToXlsx(req: Request, res: Response) {
+  async exportDailyReportToXlsx(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { date } = req.query;
 
       if (!date) {
         return res.status(400).json({ error: 'date is required' });
       }
 
-      const filePath = await this.reportService.exportDailyReportToXlsx(new Date(date as string));
+      const filePath = await this.reportService.exportDailyReportToXlsx(new Date(date as string), req.userId);
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="reporte_diario.xlsx"`);
@@ -62,8 +76,12 @@ export class ReportController {
     }
   }
 
-  async exportMonthlyReportToXlsx(req: Request, res: Response) {
+  async exportMonthlyReportToXlsx(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { month, year } = req.query;
 
       if (!month || !year) {
@@ -72,7 +90,8 @@ export class ReportController {
 
       const filePath = await this.reportService.exportMonthlyReportToXlsx(
         parseInt(month as string),
-        parseInt(year as string)
+        parseInt(year as string),
+        req.userId
       );
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -89,8 +108,12 @@ export class ReportController {
     }
   }
 
-  async getDailyReports(req: Request, res: Response) {
+  async getDailyReports(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
@@ -99,7 +122,8 @@ export class ReportController {
 
       const reports = await this.reportService.getDailyReports(
         new Date(startDate as string),
-        new Date(endDate as string)
+        new Date(endDate as string),
+        req.userId
       );
 
       res.json(reports);
@@ -108,15 +132,19 @@ export class ReportController {
     }
   }
 
-  async getMonthlyReports(req: Request, res: Response) {
+  async getMonthlyReports(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { year } = req.query;
 
       if (!year) {
         return res.status(400).json({ error: 'year is required' });
       }
 
-      const reports = await this.reportService.getMonthlyReports(parseInt(year as string));
+      const reports = await this.reportService.getMonthlyReports(parseInt(year as string), req.userId);
       res.json(reports);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });

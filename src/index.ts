@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
 // Importar entidades
+import { User } from './entities/User';
 import { Vehicle } from './entities/Vehicle';
 import { Client } from './entities/Client';
 import { ParkingSession } from './entities/ParkingSession';
@@ -13,18 +14,21 @@ import { DailyReport } from './entities/DailyReport';
 import { MonthlyReport } from './entities/MonthlyReport';
 
 // Importar servicios
+import { AuthService } from './services/AuthService';
 import { ParkingService } from './services/ParkingService';
 import { InvoiceService } from './services/InvoiceService';
 import { ReportService } from './services/ReportService';
 import { ClientService } from './services/ClientService';
 
 // Importar controladores
+import { AuthController } from './controllers/AuthController';
 import { ParkingController } from './controllers/ParkingController';
 import { InvoiceController } from './controllers/InvoiceController';
 import { ReportController } from './controllers/ReportController';
 import { ClientController } from './controllers/ClientController';
 
 // Importar rutas
+import { createAuthRoutes } from './routes/authRoutes';
 import { createParkingRoutes } from './routes/parkingRoutes';
 import { createInvoiceRoutes } from './routes/invoiceRoutes';
 import { createReportRoutes } from './routes/reportRoutes';
@@ -46,7 +50,7 @@ const getDataSourceConfig = () => {
       ssl: isProduction ? { rejectUnauthorized: false } : false,
       synchronize: isDevelopment,
       logging: isDevelopment,
-      entities: [Vehicle, Client, ParkingSession, Invoice, DailyReport, MonthlyReport],
+      entities: [User, Vehicle, Client, ParkingSession, Invoice, DailyReport, MonthlyReport],
     };
   }
   
@@ -56,7 +60,7 @@ const getDataSourceConfig = () => {
     database: './parqueadero.db',
     synchronize: true,
     logging: false,
-    entities: [Vehicle, Client, ParkingSession, Invoice, DailyReport, MonthlyReport],
+    entities: [User, Vehicle, Client, ParkingSession, Invoice, DailyReport, MonthlyReport],
   };
 };
 
@@ -74,6 +78,8 @@ AppDataSource.initialize()
     console.log('✓ Database initialized successfully');
 
     // Instanciar servicios
+    const authService = new AuthService(AppDataSource);
+
     const parkingService = new ParkingService(
       AppDataSource.getRepository(ParkingSession),
       AppDataSource.getRepository(Vehicle),
@@ -97,12 +103,14 @@ AppDataSource.initialize()
     );
 
     // Instanciar controladores
+    const authController = new AuthController(authService);
     const parkingController = new ParkingController(parkingService);
     const invoiceController = new InvoiceController(invoiceService);
     const reportController = new ReportController(reportService);
     const clientController = new ClientController(clientService);
 
     // Registrar rutas
+    app.use('/api/auth', createAuthRoutes(authController));
     app.use('/api/parking', createParkingRoutes(parkingController));
     app.use('/api/invoices', createInvoiceRoutes(invoiceController));
     app.use('/api/reports', createReportRoutes(reportController));
@@ -118,6 +126,7 @@ AppDataSource.initialize()
     app.listen(PORT, () => {
       console.log(`✓ Server running on http://localhost:${PORT}`);
       console.log(`✓ API Documentation:`);
+      console.log(`  - Auth: POST /api/auth/register, POST /api/auth/login`);
       console.log(`  - Parking: POST /api/parking/entry, POST /api/parking/exit-by-plate`);
       console.log(`  - Invoices: GET /api/invoices/client/:clientId`);
       console.log(`  - Reports: GET /api/reports/daily, GET /api/reports/monthly`);

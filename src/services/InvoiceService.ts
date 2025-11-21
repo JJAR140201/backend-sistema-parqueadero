@@ -13,9 +13,9 @@ export class InvoiceService {
     private clientRepository: Repository<Client>
   ) {}
 
-  async generateInvoice(sessionId: string) {
+  async generateInvoice(sessionId: string, userId: string) {
     const session = await this.parkingSessionRepository.findOne({
-      where: { id: sessionId },
+      where: { id: sessionId, userId: userId }, // Filtrar por usuario
       relations: ['vehicle', 'client'],
     });
 
@@ -32,6 +32,7 @@ export class InvoiceService {
     const invoice = this.invoiceRepository.create({
       parkingSessionId: sessionId,
       clientId: session.clientId,
+      userId: userId, // Asociar al usuario autenticado
       invoiceNumber,
       entryTime: session.entryTime,
       exitTime: session.exitTime,
@@ -44,9 +45,9 @@ export class InvoiceService {
     return invoice;
   }
 
-  async generatePDF(invoiceId: string): Promise<string> {
+  async generatePDF(invoiceId: string, userId: string): Promise<string> {
     const invoice = await this.invoiceRepository.findOne({
-      where: { id: invoiceId },
+      where: { id: invoiceId, userId: userId }, // Filtrar por usuario
       relations: ['client', 'parkingSession', 'parkingSession.vehicle'],
     });
 
@@ -107,24 +108,25 @@ export class InvoiceService {
     return { success: true, message: 'SMS enviado' };
   }
 
-  async getInvoicesByClient(clientId: string) {
+  async getInvoicesByClient(clientId: string, userId: string) {
     return this.invoiceRepository.find({
-      where: { clientId },
+      where: { clientId, userId }, // Filtrar por usuario
       relations: ['parkingSession'],
     });
   }
 
-  async getInvoicesByDateRange(startDate: Date, endDate: Date) {
+  async getInvoicesByDateRange(startDate: Date, endDate: Date, userId: string) {
     return this.invoiceRepository
       .createQueryBuilder('invoice')
-      .where('invoice.createdAt >= :start', { start: startDate })
+      .where('invoice.userId = :userId', { userId }) // Filtrar por usuario
+      .andWhere('invoice.createdAt >= :start', { start: startDate })
       .andWhere('invoice.createdAt <= :end', { end: endDate })
       .orderBy('invoice.createdAt', 'DESC')
       .getMany();
   }
 
-  async markInvoiceAsPaid(invoiceId: string, paymentMethod: string) {
-    const invoice = await this.invoiceRepository.findOne({ where: { id: invoiceId } });
+  async markInvoiceAsPaid(invoiceId: string, userId: string, paymentMethod: string) {
+    const invoice = await this.invoiceRepository.findOne({ where: { id: invoiceId, userId } }); // Filtrar por usuario
 
     if (!invoice) {
       throw new Error('Invoice not found');
@@ -135,5 +137,13 @@ export class InvoiceService {
     invoice.paymentDate = new Date();
 
     return this.invoiceRepository.save(invoice);
+  }
+
+  async getAllInvoices(userId: string) {
+    return this.invoiceRepository.find({
+      where: { userId }, // Filtrar por usuario
+      relations: ['client', 'parkingSession'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }

@@ -1,18 +1,23 @@
 import { Request, Response } from 'express';
 import { ClientService } from '../services/ClientService';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
 export class ClientController {
   constructor(private clientService: ClientService) {}
 
-  async createClient(req: Request, res: Response) {
+  async createClient(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { name, document, email, phone, type, monthlyFee } = req.body;
 
       if (!name || !document || !email) {
         return res.status(400).json({ error: 'name, document, and email are required' });
       }
 
-      const client = await this.clientService.createClient({
+      const client = await this.clientService.createClient(req.userId, {
         name,
         document,
         email,
@@ -27,10 +32,14 @@ export class ClientController {
     }
   }
 
-  async getClientByDocument(req: Request, res: Response) {
+  async getClientByDocument(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { document } = req.params;
-      const client = await this.clientService.getClientByDocument(document);
+      const client = await this.clientService.getClientByDocument(document, req.userId);
 
       if (!client) {
         return res.status(404).json({ error: 'Client not found' });
@@ -42,10 +51,14 @@ export class ClientController {
     }
   }
 
-  async getClientById(req: Request, res: Response) {
+  async getClientById(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { clientId } = req.params;
-      const client = await this.clientService.getClientById(clientId);
+      const client = await this.clientService.getClientById(clientId, req.userId);
 
       if (!client) {
         return res.status(404).json({ error: 'Client not found' });
@@ -57,28 +70,40 @@ export class ClientController {
     }
   }
 
-  async getAllClients(req: Request, res: Response) {
+  async getAllClients(req: AuthRequest, res: Response) {
     try {
-      const clients = await this.clientService.getAllClients();
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const clients = await this.clientService.getAllClients(req.userId);
       res.json(clients);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
-  async getMonthlyClients(req: Request, res: Response) {
+  async getMonthlyClients(req: AuthRequest, res: Response) {
     try {
-      const clients = await this.clientService.getMonthlyClients();
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
+      const clients = await this.clientService.getMonthlyClients(req.userId);
       res.json(clients);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
-  async updateClient(req: Request, res: Response) {
+  async updateClient(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { clientId } = req.params;
-      const client = await this.clientService.updateClient(clientId, req.body);
+      const client = await this.clientService.updateClient(clientId, req.userId, req.body);
 
       res.json(client);
     } catch (error) {
@@ -86,10 +111,14 @@ export class ClientController {
     }
   }
 
-  async deactivateClient(req: Request, res: Response) {
+  async deactivateClient(req: AuthRequest, res: Response) {
     try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'No autenticado' });
+      }
+
       const { clientId } = req.params;
-      await this.clientService.deactivateClient(clientId);
+      await this.clientService.deactivateClient(clientId, req.userId);
 
       res.json({ message: 'Client deactivated successfully' });
     } catch (error) {
