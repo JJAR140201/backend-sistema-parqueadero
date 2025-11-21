@@ -69,26 +69,9 @@ const AppDataSource = new DataSource(getDataSourceConfig());
 // Inicializar aplicación
 const app = express();
 
-// Configurar CORS
+// Configurar CORS - Permitir todos los orígenes
 const corsOptions = {
-  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    if (isDevelopment) {
-      // En desarrollo, permitir todos los orígenes
-      callback(null, true);
-    } else {
-      // En producción, permitir solo orígenes específicos
-      const allowedOrigins = [
-        'https://railway.com',
-        process.env.FRONTEND_URL,
-      ].filter(Boolean);
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }
-  },
+  origin: true, // Permitir cualquier origen
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -156,6 +139,7 @@ AppDataSource.initialize()
       console.log(`  - Invoices: GET /api/invoices/client/:clientId`);
       console.log(`  - Reports: GET /api/reports/daily, GET /api/reports/monthly`);
       console.log(`  - Clients: POST /api/clients, GET /api/clients`);
+      console.log(`✓ CORS enabled for development`);
     });
   })
   .catch(error => console.error('Error initializing database:', error));
