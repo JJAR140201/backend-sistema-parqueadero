@@ -173,6 +173,7 @@ export class ReportService {
 
   async getMonthlyReports(year: number) {
     return this.monthlyReportRepository
+      .createQueryBuilder('report')
       .where('report.year = :year', { year })
       .orderBy('report.month', 'ASC')
       .getMany();
