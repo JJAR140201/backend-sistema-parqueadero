@@ -72,25 +72,25 @@ const app = express();
 // Configurar CORS
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:57052',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:57052',
-      'https://railway.com',
-      isProduction ? process.env.FRONTEND_URL : undefined,
-    ].filter(Boolean);
-
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isDevelopment) {
+      // En desarrollo, permitir todos los orígenes
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // En producción, permitir solo orígenes específicos
+      const allowedOrigins = [
+        'https://railway.com',
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
